@@ -91,6 +91,11 @@ def extract_youtube_id(url):
             return match.group(1)
     return None
 
+def atualizar_exercicio(id, exercicio, series, video_url):
+    c.execute('UPDATE treinos SET exercicio = ?, series = ?, video_url = ? WHERE id = ?',
+              (exercicio, series, video_url, id))
+    conn.commit()
+
 def criar_usuario_padrao():
     usuarios = carregar_usuarios()
     admin_existe = any(u['username'] == 'admin' for u in usuarios)
@@ -199,13 +204,37 @@ else:
                 treino_df = pd.read_sql("SELECT id, exercicio, series, video_url FROM treinos WHERE username_aluno = ?", conn, params=(username_selecionado,))
                 if not treino_df.empty:
                     for _, row in treino_df.iterrows():
-                        cols = st.columns([4, 2, 1])
+                        cols = st.columns([3, 1, 1, 1])
                         cols[0].markdown(f"**{row['exercicio']}**\nSéries: {row['series']}")
-                        if cols[2].button("Excluir", key=f"delete_{row['id']}"):
+                        
+                        if cols[1].button("✏️ Editar", key=f"edit_{row['id']}"):
+                            st.session_state[f"edit_mode_{row['id']}"] = True
+                        
+                        if cols[2].button("❌ Excluir", key=f"delete_{row['id']}"):
                             c.execute("DELETE FROM treinos WHERE id = ?", (row['id'],))
                             conn.commit()
                             st.success("Exercício excluído com sucesso!")
-                            st.experimental_rerun()
+                            st.rerun()
+                        
+                        # Formulário de edição
+                        if st.session_state.get(f"edit_mode_{row['id']}", False):
+                            st.info("📝 Editando Exercício")
+                            with st.form(f"form_edit_{row['id']}"):
+                                novo_exercicio = st.text_input("Nome do Exercício", value=row['exercicio'], key=f"ex_{row['id']}")
+                                nova_serie = st.text_input("Séries/Repetições", value=row['series'], key=f"ser_{row['id']}")
+                                novo_video = st.text_input("Link do Vídeo (YouTube)", value=row['video_url'], key=f"vid_{row['id']}")
+                                
+                                col_salvar, col_cancelar = st.columns(2)
+                                with col_salvar:
+                                    if st.form_submit_button("💾 Salvar Alterações"):
+                                        atualizar_exercicio(row['id'], novo_exercicio, nova_serie, novo_video)
+                                        st.session_state[f"edit_mode_{row['id']}"] = False
+                                        st.success("Exercício atualizado com sucesso!")
+                                        st.rerun()
+                                with col_cancelar:
+                                    if st.form_submit_button("✖️ Cancelar"):
+                                        st.session_state[f"edit_mode_{row['id']}"] = False
+                                        st.rerun()
                 else:
                     st.write("Nenhum exercício cadastrado para este aluno.")
 
