@@ -183,8 +183,19 @@ else:
                 
                 # Mostrar treino atual
                 st.subheader(f"Treino de {selecionado}")
-                df_treino = pd.read_sql(f"SELECT id, exercicio, series, video_url FROM treinos WHERE username_aluno = '{username_selecionado}'", conn)
-                st.table(df_treino[['exercicio', 'series']])
+                treino_df = pd.read_sql("SELECT id, exercicio, series, video_url FROM treinos WHERE username_aluno = ?", conn, params=(username_selecionado,))
+                if not treino_df.empty:
+                    for _, row in treino_df.iterrows():
+                        cols = st.columns([4, 2, 1])
+                        cols[0].markdown(f"**{row['exercicio']}**\nSéries: {row['series']}")
+                        if cols[2].button("Excluir", key=f"delete_{row['id']}"):
+                            c.execute("DELETE FROM treinos WHERE id = ?", (row['id'],))
+                            conn.commit()
+                            st.success("Exercício excluído com sucesso!")
+                            st.experimental_rerun()
+                else:
+                    st.write("Nenhum exercício cadastrado para este aluno.")
+
                 if st.button("Limpar Treino Completo"):
                     c.execute("DELETE FROM treinos WHERE username_aluno = ?", (username_selecionado,))
                     conn.commit()
