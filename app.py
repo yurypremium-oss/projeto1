@@ -96,18 +96,6 @@ def atualizar_exercicio(id, exercicio, series, video_url):
               (exercicio, series, video_url, id))
     conn.commit()
 
-def copiar_treino(username_origem, username_destino):
-    # Buscar todos os exercícios do aluno de origem
-    exercicios = c.execute('SELECT exercicio, series, video_url FROM treinos WHERE username_aluno = ?', 
-                           (username_origem,)).fetchall()
-    
-    # Inserir cada exercício para o aluno de destino
-    for exercicio_info in exercicios:
-        c.execute('INSERT INTO treinos (username_aluno, exercicio, series, video_url) VALUES (?,?,?,?)',
-                  (username_destino, exercicio_info[0], exercicio_info[1], exercicio_info[2]))
-    conn.commit()
-    return len(exercicios)
-
 def criar_usuario_padrao():
     usuarios = carregar_usuarios()
     admin_existe = any(u['username'] == 'admin' for u in usuarios)
@@ -254,25 +242,6 @@ else:
                     c.execute("DELETE FROM treinos WHERE username_aluno = ?", (username_selecionado,))
                     conn.commit()
                     st.rerun()
-                
-                # --- SEÇÃO DE CÓPIA DE TREINO ---
-                st.divider()
-                st.subheader("📋 Copiar Treino de Outro Aluno")
-                
-                with st.form("form_copiar_treino"):
-                    st.write("Selecione um aluno para copiar o treino completo:")
-                    alunos_para_copiar = {u['nome']: u['username'] for u in lista_alunos if u[0] != selecionado}
-                    
-                    if alunos_para_copiar:
-                        aluno_origem = st.selectbox("Aluno de origem (de quem copiar):", list(alunos_para_copiar.keys()), key="origem_copy")
-                        username_origem = alunos_para_copiar[aluno_origem]
-                        
-                        if st.form_submit_button("📥 Copiar Treino Completo"):
-                            quantidade = copiar_treino(username_origem, username_selecionado)
-                            st.success(f"✅ Treino copiado com sucesso! {quantidade} exercício(s) adicionado(s) para {selecionado}!")
-                            st.rerun()
-                    else:
-                        st.warning("Não há outros alunos para copiar treinos.")
             else:
                 st.warning("Nenhum aluno cadastrado.")
 
