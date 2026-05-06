@@ -260,12 +260,36 @@ else:
             treinos = pd.read_sql(f"SELECT * FROM treinos WHERE username_aluno = '{username_logado}'", conn)
             
             if not treinos.empty:
+                st.markdown(
+                    """
+                    <style>
+                    .video-responsive {
+                        position: relative;
+                        width: 100%;
+                        padding-bottom: 56.25%;
+                        height: 0;
+                        overflow: hidden;
+                    }
+                    .video-responsive iframe {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                    }
+                    </style>
+                    """,
+                    unsafe_allow_html=True,
+                )
                 for idx, row in treinos.iterrows():
                     with st.expander(f"{row['exercicio']} - {row['series']}"):
                         if row['video_url']:
                             video_id = extract_youtube_id(row['video_url'])
                             if video_id:
-                                st.markdown(f'<iframe width="560" height="315" src="https://www.youtube.com/embed/{video_id}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>', unsafe_allow_html=True)
+                                st.markdown(
+                                    f'<div class="video-responsive"><iframe src="https://www.youtube.com/embed/{video_id}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>',
+                                    unsafe_allow_html=True,
+                                )
                             else:
                                 st.write("URL de vídeo inválida.")
                         else:
