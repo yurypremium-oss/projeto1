@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 import os
+import re
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Personal Pro App", layout="centered")
@@ -77,6 +78,17 @@ def get_professor_username():
     for u in usuarios:
         if u['tipo'] == 'Professor':
             return u['username']
+    return None
+
+def extract_youtube_id(url):
+    patterns = [
+        r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})',
+        r'(?:https?://)?youtu\.be/([a-zA-Z0-9_-]{11})'
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
     return None
 
 def criar_usuario_padrao():
@@ -251,7 +263,11 @@ else:
                 for idx, row in treinos.iterrows():
                     with st.expander(f"{row['exercicio']} - {row['series']}"):
                         if row['video_url']:
-                            st.markdown(f"[Assistir Vídeo]({row['video_url']})")
+                            video_id = extract_youtube_id(row['video_url'])
+                            if video_id:
+                                st.markdown(f'<iframe width="560" height="315" src="https://www.youtube.com/embed/{video_id}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>', unsafe_allow_html=True)
+                            else:
+                                st.write("URL de vídeo inválida.")
                         else:
                             st.write("Vídeo não disponível.")
             else:
