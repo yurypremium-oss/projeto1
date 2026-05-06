@@ -1,0 +1,51 @@
+{
+    "usuarios": [
+        {
+            "nome": "Professor Master",
+            "username": "admin",
+            "password": "admin123",
+            "tipo": "Professor"
+        },
+        {
+            "nome": "Cileni Feitosa",
+            "username": "cileni",
+            "password": "@cileni01",
+            "tipo": "Aluno"
+        },
+        {
+            "nome": "Igor Moreira",
+            "username": "igor",
+            "password": "@igor02",
+            "tipo": "Aluno"
+        },
+        {
+            "nome": "João Victor ",
+            "username": "joao",
+            "password": "@joao03",
+            "tipo": "Aluno"
+        },
+        {
+            "nome": "João Victor M",
+            "username": "joaovictor",
+            "password": "@joao03",
+            "tipo": "Aluno"
+        }
+    ],
+    "treinos": [
+        {
+            "id": 5,
+            "username_aluno": "cileni",
+            "exercicio": "A / cadeira extensora",
+            "series": "3 x 12 / 1min descanso",
+            "video_url": "https://www.youtube.com/watch?v=EZMYCLKuGow"
+        },
+        {
+            "id": 6,
+            "username_aluno": "cileni",
+            "exercicio": "A / supino reto",
+            "series": "3 x 12 / 1min descanso",
+            "video_url": "https://www.youtube.com/watch?v=EZMYCLKuGow"
+        }
+    ],
+    "mensagens": []
+}
