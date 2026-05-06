@@ -59,6 +59,19 @@ def salvar_usuario(nome, username, password, tipo):
         f.write(f"{nome},{username},{password},{tipo}\n")
     return True
 
+def atualizar_usuario(username, novo_nome, nova_senha):
+    usuarios = carregar_usuarios()
+    for u in usuarios:
+        if u['username'] == username:
+            u['nome'] = novo_nome
+            if nova_senha:
+                u['password'] = nova_senha
+            break
+    # Reescrever o arquivo
+    with open(ARQUIVO_USUARIOS, 'w', encoding='utf-8') as f:
+        for u in usuarios:
+            f.write(f"{u['nome']},{u['username']},{u['password']},{u['tipo']}\n")
+
 def get_professor_username():
     usuarios = carregar_usuarios()
     for u in usuarios:
@@ -200,6 +213,22 @@ else:
             else:
                 st.write("Nenhuma mensagem nova.")
 
+            st.header("📤 Enviar Mensagem para Aluno")
+            usuarios = carregar_usuarios()
+            alunos = [u for u in usuarios if u['tipo'] == 'Aluno']
+            if alunos:
+                nomes_alunos = {u['nome']: u['username'] for u in alunos}
+                selecionado = st.selectbox("Escolha o Aluno para enviar mensagem", list(nomes_alunos.keys()))
+                username_selecionado = nomes_alunos[selecionado]
+                msg_texto = st.text_area("Digite a mensagem:")
+                if st.button("Enviar Mensagem"):
+                    c.execute('INSERT INTO mensagens (remetente, destinatario, texto) VALUES (?,?,?)', 
+                              (username_logado, username_selecionado, msg_texto))
+                    conn.commit()
+                    st.success(f"Mensagem enviada para {selecionado}!")
+            else:
+                st.warning("Nenhum aluno cadastrado.")
+
         elif choice == "Minha Conta":
             st.header("👤 Minha Conta")
             with st.form("form_minha_conta"):
@@ -212,7 +241,7 @@ else:
 
     # --- ÁREA DO ALUNO ---
     elif tipo_usuario == "Aluno":
-        tab1, tab2 = st.tabs(["Meu Treino", "Falar com Personal"])
+        tab1, tab2, tab3 = st.tabs(["Meu Treino", "Falar com Personal", "Mensagens do Personal"])
         
         with tab1:
             st.header(f"💪 Seu Treino, {nome_usuario}")
@@ -240,4 +269,17 @@ else:
                     st.success("Mensagem enviada ao professor!")
                 else:
                     st.error("Professor não encontrado.")
+
+        with tab3:
+            st.header("💬 Mensagens do Personal")
+            prof_username = get_professor_username()
+            if prof_username:
+                mensagens_prof = pd.read_sql(f"SELECT texto FROM mensagens WHERE remetente = '{prof_username}' AND destinatario = '{username_logado}'", conn)
+                if not mensagens_prof.empty:
+                    for idx, row in mensagens_prof.iterrows():
+                        st.info(f"**Personal**: {row['texto']}")
+                else:
+                    st.write("Nenhuma mensagem do personal.")
+            else:
+                st.error("Professor não encontrado.")
 #1 atualização                
