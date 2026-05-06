@@ -59,18 +59,12 @@ def salvar_usuario(nome, username, password, tipo):
         f.write(f"{nome},{username},{password},{tipo}\n")
     return True
 
-def atualizar_usuario(username_antigo, nome_novo, password_novo):
+def get_professor_username():
     usuarios = carregar_usuarios()
     for u in usuarios:
-        if u['username'] == username_antigo:
-            u['nome'] = nome_novo
-            u['password'] = password_novo
-            break
-    # Reescrever o arquivo
-    with open(ARQUIVO_USUARIOS, 'w', encoding='utf-8') as f:
-        for u in usuarios:
-            f.write(f"{u['nome']},{u['username']},{u['password']},{u['tipo']}\n")
-    return True
+        if u['tipo'] == 'Professor':
+            return u['username']
+    return None
 
 def criar_usuario_padrao():
     usuarios = carregar_usuarios()
@@ -97,34 +91,28 @@ def login_user(user, password):
 # --- INTERFACE PRINCIPAL ---
 if not st.session_state['logado']:
     st.title("🔐 Acesso ao Sistema")
-    tab_l, tab_i = st.tabs(["Login", "Informações"])
-    
-    with tab_l:
-        user = st.text_input("Usuário")
-        password = st.text_input("Senha", type='password')
-        if st.button("Entrar"):
-            dados = login_user(user, password)
-            if dados:
-                st.session_state['logado'] = True
-                st.session_state['user_data'] = dados
-                st.rerun()
-            else:
-                st.error("Usuário ou senha inválidos.")
-    with tab_i:
-        st.info("Login padrão do professor: admin | Senha: admin123")
+    user = st.text_input("Usuário")
+    password = st.text_input("Senha", type='password')
+    if st.button("Entrar"):
+        dados = login_user(user, password)
+        if dados:
+            st.session_state['logado'] = True
+            st.session_state['user_data'] = dados
+            st.rerun()
+        else:
+            st.error("Usuário ou senha inválidos.")
 
 else:
     nome_usuario, username_logado, tipo_usuario = st.session_state['user_data']
     
     st.sidebar.title(f"Bem-vindo, {nome_usuario}")
-    st.sidebar.write(f"Perfil: {tipo_usuario}")
     if st.sidebar.button("Sair"):
         st.session_state['logado'] = False
         st.rerun()
 
     # --- ÁREA DO PROFESSOR ---
     if tipo_usuario == "Professor":
-        menu = ["Cadastrar Aluno", "Gerenciar Alunos", "Montar Treinos", "Mensagens dos Alunos"]
+        menu = ["Cadastrar Aluno", "Gerenciar Alunos", "Montar Treinos", "Mensagens dos Alunos", "Minha Conta"]
         choice = st.selectbox("O que deseja fazer?", menu)
 
         if choice == "Cadastrar Aluno":
@@ -212,6 +200,16 @@ else:
             else:
                 st.write("Nenhuma mensagem nova.")
 
+        elif choice == "Minha Conta":
+            st.header("👤 Minha Conta")
+            with st.form("form_minha_conta"):
+                novo_nome = st.text_input("Nome Completo", value=nome_usuario)
+                nova_senha = st.text_input("Nova Senha", type="password")
+                if st.form_submit_button("Salvar Alterações"):
+                    atualizar_usuario(username_logado, novo_nome, nova_senha)
+                    st.success("Informações atualizadas!")
+                    st.rerun()
+
     # --- ÁREA DO ALUNO ---
     elif tipo_usuario == "Aluno":
         tab1, tab2 = st.tabs(["Meu Treino", "Falar com Personal"])
@@ -224,7 +222,7 @@ else:
                 for idx, row in treinos.iterrows():
                     with st.expander(f"{row['exercicio']} - {row['series']}"):
                         if row['video_url']:
-                            st.video(row['video_url'])
+                            st.markdown(f"[Assistir Vídeo]({row['video_url']})")
                         else:
                             st.write("Vídeo não disponível.")
             else:
@@ -234,8 +232,12 @@ else:
             st.header("📨 Enviar dúvida")
             msg_texto = st.text_area("Descreva sua dúvida para o professor:")
             if st.button("Enviar Mensagem"):
-                c.execute('INSERT INTO mensagens (remetente, destinatario, texto) VALUES (?,?,?)', 
-                          (nome_usuario, 'admin', msg_texto))
-                conn.commit()
-                st.success("Mensagem enviada ao professor!")
+                prof_username = get_professor_username()
+                if prof_username:
+                    c.execute('INSERT INTO mensagens (remetente, destinatario, texto) VALUES (?,?,?)', 
+                              (nome_usuario, prof_username, msg_texto))
+                    conn.commit()
+                    st.success("Mensagem enviada ao professor!")
+                else:
+                    st.error("Professor não encontrado.")
 #1 atualização                
